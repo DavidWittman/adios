@@ -20,11 +20,6 @@
       "12": "asia-east1-b"
       "13": "asia-east1-c"
 
-  # This variable file is included so the gce-network role knows
-  # which port to open for SSH
-  vars_files:
-    - roles/ssh/defaults/main.yml
-
   vars_prompt:
     - name: "gce_zone_var"
       prompt: >
@@ -94,40 +89,4 @@
   roles:
     - genesis-google
 
-
-- name: Configure the Server and install required software
-  hosts: adios-host
-  remote_user: root
-
-  roles:
-    - common
-    - ssh
-    - monit
-    - ufw
-
-
-- name: Open all service ports
-  hosts: localhost
-  connection: local
-  gather_facts: no
-
-  # These variable files are included so the gce-network role
-  # knows which ports to open
-  vars_files:
-    - roles/ssh/defaults/main.yml
-
-  pre_tasks:
-    - name: Set the adios_host fact to the value of the new server. This fact will be used to retrieve the obfsproxy port values.
-      set_fact:
-        adios_host: "{{ groups['adios-host'][0] }}"
-
-    - name: Retrieve the randomly chosen Tor obfs3 port
-      set_fact:
-        tor_obfs3_port: "{{ hostvars[adios_host]['tor_obfs3_port'] }}"
-
-  roles:
-    # We can modify the Google Compute Engine network now that we know which
-    # obfsproxy ports Tor is using
-    - { role: gce-network,
-        open_ssh_port_only:     false,
-        open_all_service_ports: true }
+- include: adios.yml

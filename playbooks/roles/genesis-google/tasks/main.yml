@@ -3,6 +3,28 @@
   command: cat ~/.ssh/id_rsa.pub
   register: ssh_key
 
+- name: Create network
+  local_action:
+    module: gce_net
+    name: "{{ gce_network }}"
+    state: "present"
+    ipv4_range: "{{ gce_ipv4_range }}"
+    credentials_file: "{{ gce_json_file_location }}"
+    project_id: "{{ gce_project_id }}"
+    service_account_email: "{{ gce_service_account_email }}"
+
+- name: Open required ports in the GCE firewall
+  local_action:
+    module: gce_net
+    name: "{{ gce_network }}"
+    fwname: "adios"
+    allowed: "tcp:{{ ssh_port }};udp:{{ l2tp_port }},{{ l2tp_ike_port }},{{ l2tp_ipsec_port }}"
+    state: "present"
+    src_range: 0.0.0.0/0
+    service_account_email: "{{ gce_service_account_email }}"
+    credentials_file: "{{ gce_json_file_location }}"
+    project_id: "{{ gce_project_id }}"
+
 - name: Create the GCE instance
   local_action:
     module: gce
