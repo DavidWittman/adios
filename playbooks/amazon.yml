@@ -1,0 +1,100 @@
+---
+- name: Provision the EC2 Server
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+
+  vars:
+    regions:
+      "1": "ap-northeast-1"
+      "2": "ap-southeast-1"
+      "3": "ap-southeast-2"
+      "4": "eu-west-1"
+      "5": "eu-central-1"
+      "6": "sa-east-1"
+      "7": "us-east-1"
+      "8": "us-west-1"
+      "9": "us-west-2"
+
+  vars_prompt:
+    - name: "aws_region_var"
+      prompt: >
+        What region should the server be located in?
+          1. Asia Pacific     (Tokyo)
+          2. Asia Pacific     (Singapore)
+          3. Asia Pacific     (Sydney)
+          4. EU               (Ireland)
+          5. EU               (Germany)
+          6. South America    (Sao Paulo)
+          7. US East          (Northern Virginia)
+          8. US West          (Northern California)
+          9. US West          (Oregon)
+        Please choose the number of your region. Press enter for default (#2) region.
+      default: "2"
+      private: no
+
+    - name: "aws_vpc_id_var"
+      prompt: |
+
+        What VPC would you like to create the server and security groups in? (ex. vpc-89d740ee)
+        Press enter to use the default VPC.
+      private: no
+
+    - name: "aws_vpc_subnet_id_var"
+      prompt: |
+
+        What subnet should the server receive an address from? (ex. subnet-78d9a232)
+        Press enter to use the default subnet.
+      private: no
+
+    - name: "aws_instance_name_var"
+      prompt: "\nWhat should the server be named? Press enter for default (adios).\n"
+      default: "adios"
+      private: no
+
+    - name: "aws_access_key_var"
+      prompt: "\n\nThe following information can be found in the IAM Management Console.\nhttps://console.aws.amazon.com/iam/home?#security_credential\n\nWhat is your AWS Access Key ID?\n"
+      default: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+      private: no
+
+    - name: "aws_secret_key_var"
+      prompt: "\nWhat is your AWS Secret Access Key?\n"
+      default: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+      private: no
+
+  # Facts persist across plays, and these facts will be used in the
+  # final step to make an API call to open all of the necessary ports in
+  # the EC2 security group. This is necessary because Tor chooses random
+  # ports for the obfsproxy pluggable transport and therefore they cannot
+  # be opened in advance before Tor is up and running.
+  pre_tasks:
+    - name: Set the AWS Region fact
+      set_fact:
+        aws_region: "{{ regions[aws_region_var] }}"
+
+    - name: Set the AWS VPC ID fact
+      set_fact:
+        aws_vpc_id: "{{ aws_vpc_id_var }}"
+      when: aws_vpc_id_var != ""
+
+    - name: Set the AWS VPC Subnet ID fact
+      set_fact:
+        aws_vpc_subnet_id: "{{ aws_vpc_subnet_id_var }}"
+      when: aws_vpc_subnet_id_var != ""
+
+    - name: Set the AWS Instance Name fact
+      set_fact:
+        aws_instance_name: "{{ aws_instance_name_var }}"
+
+    - name: Set the AWS Access Key fact
+      set_fact:
+        aws_access_key: "{{ aws_access_key_var }}"
+
+    - name: Set the AWS Secret Key fact
+      set_fact:
+        aws_secret_key: "{{ aws_secret_key_var }}"
+
+  roles:
+    - genesis-amazon
+
+- include: adios.yml

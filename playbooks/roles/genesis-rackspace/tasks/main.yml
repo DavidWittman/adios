@@ -1,0 +1,34 @@
+---
+- name: Create the server
+  local_action:
+    module: rax
+    api_key: "{{ rackspace_api_key }}"
+    username: "{{ rackspace_username }}"
+    name: "{{ rackspace_server_name }}"
+    flavor: "{{ rackspace_flavor }}"
+    image: "{{ rackspace_image }}"
+    region: "{{ regions[rackspace_region] }}"
+    files:
+      /root/.ssh/authorized_keys: ~/.ssh/id_rsa.pub
+    wait: yes
+  register: adios_server
+
+- name: Wait until the server has finished booting and OpenSSH is accepting connections
+  wait_for:
+    host: "{{ adios_server.instances[0].rax_accessipv4 }}"
+    port: 22
+    search_regex: OpenSSH
+    timeout: 600
+
+- name: Create the in-memory inventory group
+  add_host:
+    name: "{{ adios_server.instances[0].rax_accessipv4 }}"
+    groups: adios-host
+
+- name: Set the adios_ipv4_address variable
+  set_fact:
+    adios_ipv4_address: "{{ adios_server.instances[0].rax_accessipv4 }}"
+
+- name: Set the adios_server_name variable
+  set_fact:
+    adios_server_name: "{{ rackspace_server_name }}"

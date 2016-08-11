@@ -1,0 +1,39 @@
+set daemon 30
+with start delay 120
+set logfile /var/log/monit.log
+set idfile /var/lib/monit/id
+set statefile /var/lib/monit/state
+
+set httpd port 2812 and
+    use address localhost  # only accept connection from localhost
+    allow localhost        # allow localhost to connect to the server
+
+# OpenSSH
+check process sshd with pidfile /var/run/sshd.pid
+   start program  "/etc/init.d/ssh start"
+   stop program  "/etc/init.d/ssh stop"
+   if failed port {{ ssh_port }} protocol ssh then restart
+   # if 5 restarts within 5 cycles then timeout
+
+# dnsmasq
+check process dnsmasq with pidfile /var/run/dnsmasq/dnsmasq.pid
+  start program = "/etc/init.d/dnsmasq start" with timeout 60 seconds
+  stop program = "/etc/init.d/dnsmasq stop"
+  if failed
+    host 127.0.0.1
+    port 53 use type udp
+    protocol dns
+    with timeout 60 seconds
+  then restart
+  if 3 restarts within 5 cycles then timeout
+  depends on dnsmasq-bin
+  depends on dnsmasq-hosts
+
+check file dnsmasq-bin with path /usr/sbin/dnsmasq
+   if failed checksum then unmonitor
+   if failed permission 755 then unmonitor
+   if failed uid root then unmonitor
+   if failed gid root then unmonitor
+
+check file dnsmasq-hosts with path /etc/hosts
+   if changed timestamp then restart

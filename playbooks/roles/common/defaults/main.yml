@@ -1,0 +1,11 @@
+---
+adios_common_packages:
+  - build-essential
+  - curl
+  - gnupg
+  - iptables
+  - ntp
+  - python-software-properties
+  - unattended-upgrades
+  # Used to generate human readable passphrases
+  - wamerican-huge

@@ -1,0 +1,6 @@
+---
+# These variables must be defined here; they are used in multiple roles
+l2tp_port: 1701
+l2tp_ike_port: 500
+l2tp_ipsec_port: 4500
+ssh_port: 22

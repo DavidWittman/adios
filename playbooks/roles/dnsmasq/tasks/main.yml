@@ -1,0 +1,23 @@
+---
+- name: install dnsmasq
+  apt:
+    name: dnsmasq
+    state: present
+
+- name: generate dnsmasq configuration file                                     
+  template:                                                                     
+    src: dnsmasq.conf.j2                                                    
+    dest: /etc/dnsmasq.conf                                                     
+  notify: restart dnsmasq   
+
+- name: add ad blacklist from pgl.yoyo.org
+  copy:
+    src: blacklist
+    dest: /etc/dnsmasq.d/blacklist
+  notify: restart dnsmasq
+
+- name: add extra blacklist from dnsmasq_extra_blacklist
+  template:
+    src: blacklist_extra.j2
+    dest: /etc/dnsmasq.d/blacklist_extra
+  notify: restart dnsmasq

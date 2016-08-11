@@ -1,0 +1,5 @@
+---
+l2tp_chap_user: adios
+l2tp_ike_port: 500
+l2tp_ipsec_port: 4500
+l2tp_port: 1701

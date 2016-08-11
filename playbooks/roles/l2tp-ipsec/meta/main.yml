@@ -1,0 +1,5 @@
+---
+dependencies:
+  - { role: dnsmasq }
+  - { role: rc-local }
+  - { role: rsyslog }

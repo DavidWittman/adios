@@ -1,0 +1,3 @@
+{% for domain in dnsmasq_extra_blacklist %}
+address=/{{ domain }}/127.0.0.1
+{% endfor %}

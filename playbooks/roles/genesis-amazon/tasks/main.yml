@@ -1,0 +1,143 @@
+---
+- name: create security group
+  local_action:
+    module: ec2_group
+    name: "{{ aws_security_group_name }}"
+    description: Security group for Streisand
+    region: "{{ aws_region }}"
+    vpc_id: "{{ aws_vpc_id|default(omit) }}"
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    rules:
+      # SSH
+      # ---
+      - proto: tcp
+        from_port: "{{ ssh_port }}"
+        to_port: "{{ ssh_port }}"
+        cidr_ip: 0.0.0.0/0
+      # L2TP/IPSec
+      # ---
+      - proto: udp
+        from_port: "{{ l2tp_ike_port }}"
+        to_port: "{{ l2tp_ike_port }}"
+        cidr_ip: 0.0.0.0/0
+      - proto: udp
+        from_port: "{{ l2tp_ipsec_port }}"
+        to_port: "{{ l2tp_ipsec_port }}"
+        cidr_ip: 0.0.0.0/0
+      - proto: udp
+        from_port: "{{ l2tp_port }}"
+        to_port: "{{ l2tp_port }}"
+        cidr_ip: 0.0.0.0/0
+    rules_egress:
+      - proto: all
+        from_port: 1
+        to_port: 65535
+        cidr_ip: 0.0.0.0/0
+
+- name: Remove the 'adios' SSH key from Amazon if it already exists. This is to prevent problems if two people with two different keys are sharing the same AWS account.
+  ec2_key:
+    name: adios-ssh
+    state: absent
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    region: "{{ aws_region }}"
+    wait: yes
+
+- name: Get the default SSH key
+  command: cat ~/.ssh/id_rsa.pub
+  register: ssh_key
+
+- name: Add the SSH key to Amazon under the name of 'adios-ssh'
+  ec2_key:
+    name: adios-ssh
+    key_material: "{{ ssh_key.stdout }}"
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    region: "{{ aws_region }}"
+    wait: yes
+
+- name: Determine which AMI to use
+  ec2_ami_find:
+    owner: "{{ aws_ami_owner }}"
+    region: "{{ aws_region }}"
+    name: "{{ aws_ami_name }}"
+    sort: name
+    sort_order: descending
+    sort_end: 1
+  register: ami
+
+- name: Create the EC2 instance
+  local_action:
+    module: ec2
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    instance_type: "{{ aws_instance_type }}"
+    image: "{{ ami.results[0].ami_id }}"
+    region: "{{ aws_region }}"
+    vpc_subnet_id: "{{ aws_vpc_subnet_id|default(omit) }}"
+    assign_public_ip: "{{ aws_vpc_subnet_id is defined and aws_vpc_subnet_id != '' }}"
+    key_name: adios-ssh
+    group: "{{ aws_security_group_name }}"
+    instance_tags:
+      Name: "{{ aws_instance_name }}"
+    wait: yes
+  register: adios_server
+
+# The auto-recover action is currently only available in us-east-1
+- name: Create CloudWatch alarm to auto-recover instance (us-east-1 only)
+  ec2_metric_alarm:
+    name: "autorecover-{{ aws_instance_name }}"
+    description: "This alarm will auto-recover the EC2 instance on host failure"
+    state: present
+    region: "{{ aws_region }}"
+    namespace: "AWS/EC2"
+    metric: StatusCheckFailed_System
+    statistic: Minimum
+    comparison: ">"
+    threshold: 0.0
+    period: 60
+    evaluation_periods: 2
+    dimensions:
+      InstanceId: "{{ adios_server.instances[0].id }}"
+    alarm_actions:
+      - "arn:aws:automate:{{ aws_region }}:ec2:recover"
+  when:
+    - aws_region == "us-east-1"
+    - aws_instance_type.startswith(("t2", "c3", "c4", "m3", "r3"))
+
+- name: Wait until the server has finished booting and OpenSSH is accepting connections
+  wait_for:
+    host: "{{ adios_server.instances[0].public_ip }}"
+    port: 22
+    search_regex: OpenSSH
+    timeout: 600
+
+- name: Allocate and associate Elastic IP
+  local_action:
+    module: ec2_eip
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    region: "{{ aws_region }}"
+    device_id: "{{ adios_server.instances[0].id }}"
+    in_vpc: "{{ aws_vpc_id is defined and aws_vpc_id != '' }}"
+  register: instance_eip
+
+- name: Create the in-memory inventory group
+  add_host:
+    name: "{{ instance_eip.public_ip }}"
+    groups: adios-host
+    ansible_user: ubuntu
+    ansible_become: yes
+
+- name: Set the adios_ipv4_address variable
+  set_fact:
+    adios_ipv4_address: "{{ adios_server.instances[0].public_ip }}"
+
+- name: Set the adios_server_name variable
+  set_fact:
+    adios_server_name: "{{ aws_instance_name }}"
+
+- name: New EC2 servers are occasionally slow to process incoming SSH connections even after the OpenSSH daemon has started up. Pause for 90 seconds.
+  pause:
+    seconds: 90

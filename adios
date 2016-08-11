@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+echo
+echo -e "\033[38;5;255m\033[48;5;234m\033[1m  A D I O S  V P N \033[0m"
+echo
+
+required_ansible_version="2.1.0.0"
+
+if [[ "$(ansible --version | grep -oe '2\(.[0-9]\)*')" < $required_ansible_version ]]
+then
+    echo "Ansible $required_ansible_version or higher is required."
+    exit -1;
+fi
+
+echo -n "Which provider are you using?
+  1. Amazon
+  2. DigitalOcean
+  3. Google
+  4. Linode
+  5. Rackspace
+: "
+
+read reply
+echo -e '\n'
+
+case "$reply" in
+  1) PLAYBOOK="amazon";;
+  2) PLAYBOOK="digitalocean";;
+  3) PLAYBOOK="google";;
+  4) PLAYBOOK="linode";;
+  5) PLAYBOOK="rackspace";;
+esac
+
+ansible-playbook -i localhost, "playbooks/${PLAYBOOK}.yml";;

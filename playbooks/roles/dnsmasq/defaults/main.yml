@@ -1,0 +1,7 @@
+---
+# These are additional domains to blacklist which aren't in any other lists
+dnsmasq_extra_blacklist:
+  - ads.distroscale.com
+dnsmasq_upstream_servers:
+  - 8.8.8.8
+  - 8.8.4.4

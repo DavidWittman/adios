@@ -1,0 +1,26 @@
+- name: Configure the Server and install required software
+  hosts: adios-host
+  remote_user: root
+  roles:
+    - common
+    - l2tp-ipsec
+    - ssh
+    - monit
+    - ufw
+  post_tasks:
+    - name: Success!
+      pause:
+        prompt: |-
+
+          Adios VPN Server setup is complete!
+
+           +----------------------------------------------------------------+
+             VPN Address           |  {{ adios_ipv4_address }}
+             IPSec Pre-Shared Key  |  {{ ipsec_preshared_key.stdout }}
+             CHAP Username         |  {{ l2tp_chap_user }}
+             CHAP Password         |  {{ chap_password.stdout }}
+           +----------------------------------------------------------------+
+
+          See generated-docs/TODO.md for more information.
+
+          Press Enter to continue...
