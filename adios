@@ -31,4 +31,4 @@ case "$reply" in
   5) PLAYBOOK="rackspace";;
 esac
 
-ansible-playbook -i localhost, "playbooks/${PLAYBOOK}.yml";;
+ansible-playbook -i inventory "playbooks/${PLAYBOOK}.yml"
