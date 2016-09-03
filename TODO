@@ -1,2 +1,5 @@
-- Make it work on GCE
 - Generate Docs
+- Environment variables everywhere
+- Create a user variables file for overriding things like usernames, passwords, etc.
+- Testing/Linting
+- dnsgate like functionality for the blacklist
