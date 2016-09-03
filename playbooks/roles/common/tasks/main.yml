@@ -12,7 +12,7 @@
     update_cache: yes
     cache_valid_time: 3600
 
-- name: Install Streisand common packages
+- name: Install Adios common packages
   apt:
     name: "{{ item }}"
   with_items: "{{ adios_common_packages }}"

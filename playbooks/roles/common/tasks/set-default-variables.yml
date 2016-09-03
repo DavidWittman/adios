@@ -1,15 +1,10 @@
 ---
-# Some providers (e.g. Amazon EC2) assign internal 172.x.x.x IP
-# addresses to their virtual machines. It's important to use the real
-# public IP in the instructions Streisand generates, because the
-# internal addresses are not publicly accessible.
-#
 # Some providers (e.g. Amazon EC2 and Linode) do not use the name that
 # is provided in the API call as the server's hostname. It's important
 # to use the friendly name in the instructions rather than an ugly,
 # randomly generated hostname.
 #
-# Each 'genesis' role for the providers that Streisand natively supports
+# Each 'genesis' role for the providers that Adios natively supports
 # sets the adios_ipv4_address and adios_server_name variables in
 # an attempt to correct the limitations laid out above. However, it is
 # also necessary to fall back to default sane values if users choose to

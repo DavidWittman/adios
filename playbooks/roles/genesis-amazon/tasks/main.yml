@@ -3,7 +3,7 @@
   local_action:
     module: ec2_group
     name: "{{ aws_security_group_name }}"
-    description: Security group for Streisand
+    description: Security group for Adios
     region: "{{ aws_region }}"
     vpc_id: "{{ aws_vpc_id|default(omit) }}"
     aws_access_key: "{{ aws_access_key }}"
