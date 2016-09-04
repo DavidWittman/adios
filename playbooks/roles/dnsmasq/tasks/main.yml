@@ -4,11 +4,11 @@
     name: dnsmasq
     state: present
 
-- name: generate dnsmasq configuration file                                     
-  template:                                                                     
-    src: dnsmasq.conf.j2                                                    
-    dest: /etc/dnsmasq.conf                                                     
-  notify: restart dnsmasq   
+- name: generate dnsmasq configuration file
+  template:
+    src: dnsmasq.conf.j2
+    dest: /etc/dnsmasq.conf
+  notify: restart dnsmasq
 
 - name: add ad blacklist from pgl.yoyo.org
   copy:
