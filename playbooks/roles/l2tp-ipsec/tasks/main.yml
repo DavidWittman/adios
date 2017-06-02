@@ -16,7 +16,7 @@
     #
     # Ubuntu 16.04's version of Python natively supports SNI,
     # so this workaround will no longer be necessary.
-    url: https://d1shxn4vnb0yj3.cloudfront.net/{{ libreswan_source_filename }}
+    url: https://d25kfp60e9u1dw.cloudfront.net/{{ libreswan_source_filename }}
     dest: "{{ libreswan_source_location }}"
     checksum: "{{ libreswan_checksum }}"
     owner: root
